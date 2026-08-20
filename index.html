@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workbench UI — Showcase & Playground</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #06090e;
+  color: #e2e8f0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  display: flex;
+}
+#app-mount {
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+</style>
+</head>
+<body>
+
+<div id="app-mount"></div>
+
+<script type="module">
+import { 
+  createIsolatedContainer, 
+  WorkbenchShell, 
+  DataTable, 
+  LogPanel, 
+  THEME_PRESETS 
+} from './src/index.js';
+
+// 1. Create Shadow DOM isolated container
+const container = createIsolatedContainer({
+  parent: document.getElementById('app-mount'),
+  theme: THEME_PRESETS.midnight,
+  density: 'standard'
+});
+
+// 2. Instantiate Shell
+const shell = new WorkbenchShell({
+  target: container.mountPoint,
+  title: 'Scripts',
+  subtitle: 'example.com',
+  views: [
+    { 
+      id: 'discover', 
+      label: 'Discover',
+      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/></svg>'
+    },
+    { 
+      id: 'activity', 
+      label: 'Activity',
+      iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 17l6-6 4 4 6-6M4 7h16" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    }
+  ],
+  onViewChange: (viewId) => {
+    discoverView.style.display = viewId === 'discover' ? 'block' : 'none';
+    activityView.style.display = viewId === 'activity' ? 'block' : 'none';
+  }
+}).mount();
+
+// 3. Mount Discover Table View
+const discoverView = document.createElement('div');
+discoverView.className = 'sl-view active';
+shell.dom.workspace.appendChild(discoverView);
+
+const table = new DataTable({
+  title: 'Scripts',
+  items: [
+    { id: '1', title: 'flux-reader-enhancer', subtitle: 'flux1 · Greasy Fork · 1.4k installs', status: 'ready', pinned: false },
+    { id: '2', title: 'gemma-4-E2B-AUDIO', subtitle: 'gemma · instruct · Greasy Fork · 820 installs', status: 'ready', pinned: true },
+    { id: '3', title: 'kokoro TTS voicepack', subtitle: 'kokoro-tts · Greasy Fork · 410 installs', status: 'starting', pinned: false },
+    { id: '4', title: 'GPT-OSS 120B Inspector', subtitle: 'gptoss-120B · view only · Greasy Fork', status: 'stopped', pinned: false }
+  ],
+  onAction: (action, item) => {
+    console.log(`Action: ${action} on item: ${item.title}`);
+    logPanel.append(`Triggered action '${action}' on [${item.title}]`, 'info');
+  }
+}).mount(discoverView);
+
+// 4. Mount Activity Logs View
+const activityView = document.createElement('div');
+activityView.className = 'sl-view';
+activityView.style.display = 'none';
+shell.dom.workspace.appendChild(activityView);
+
+const logPanel = new LogPanel({
+  title: 'System Logs',
+  tabs: ['Both', 'Proxy', 'Upstream'],
+  initialLines: [
+    { line: 'Warmup text for initialization on target: example.com', level: 'info', timestamp: '07:11:00 AM' },
+    { line: 'Upstream API query -> api.greasyfork.org/by-site/example.com', level: 'debug', timestamp: '07:11:02 AM' },
+    { line: 'Greasy Fork returned 4 records (3 validated, 1 deleted omitted)', level: 'ready', timestamp: '07:11:03 AM' },
+    { line: 'Shadow DOM container mounted. Host CSS reset active.', level: 'ready', timestamp: '07:11:04 AM' }
+  ]
+}).mount(activityView);
+</script>
+</body>
+</html>
